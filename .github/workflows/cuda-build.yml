@@ -38,7 +38,7 @@ jobs:
         run: |
           cmake -B build -G Ninja \
             -DGGML_CUDA=ON \
-            -DCMAKE_CUDA_ARCHITECTURES="61;70;75;80;86;89;121" \
+            -DCMAKE_CUDA_ARCHITECTURES="61;70;75;80;86;89;90" \
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
