@@ -19,7 +19,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y cmake ninja-build libcurl4-openssl-dev libgomp1
 
       - name: Set up CUDA toolkit
-        uses: Jimver/cuda-toolkit@v0.2.19
+        uses: Jimver/cuda-toolkit@v0.2.30
         id: cuda-toolkit
         with:
           cuda: '12.6.0'
