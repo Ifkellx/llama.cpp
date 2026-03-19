@@ -1,0 +1,68 @@
+name: CUDA 12 Build & Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build libcurl4-openssl-dev libgomp1
+
+      - name: Set up CUDA toolkit
+        uses: Jimver/cuda-toolkit@v0.2.19
+        id: cuda-toolkit
+        with:
+          cuda: '12.6.0'
+          method: 'network'
+          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev"]'
+          linux-local-args: '["--toolkit"]'
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2.14
+        with:
+          key: llama-cpp-cuda
+          max-size: "4G"
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -G Ninja \
+            -DGGML_CUDA=ON \
+            -DCMAKE_CUDA_ARCHITECTURES="61;70;75;80;86;89;121" \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache
+
+      - name: Build llama-server
+        run: |
+          cmake --build build --config Release -j $(nproc) --target llama-server
+
+      - name: Package Release Binary
+        run: |
+          cd build/bin
+          tar -czvf llama-server-cuda.tar.gz llama-server
+          sha256sum llama-server-cuda.tar.gz > llama-server-cuda.tar.gz.sha256
+
+      - name: Create or Update tag
+        run: |
+          git tag -f "cuda-latest"
+          git push -f origin "cuda-latest"
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "cuda-latest"
+          files: |
+            build/bin/llama-server-cuda.tar.gz
+            build/bin/llama-server-cuda.tar.gz.sha256
+          make_latest: true
